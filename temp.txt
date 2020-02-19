@@ -1,0 +1,119 @@
+https://www.youtube.com/watch?v=V01jjyq7MS8
+
+Hypermedia As The Engine Of Application State
+HATEOAS
+It is a representational model of REST
+Here we exposed hypermedia links in the rest endpoints itself
+
+hateoas dependency
+
+Users 
+	name,
+	salary,
+	userId
+UsersController 
+	/users
+	getAllUsers()
+
+	/user/{userId}
+	getUser()
+
+implement hateoas
+
+UsersController
+	@GetMapping(value="/getAllUsersUsingHateoas", produces = MediaTypes.HAL_JSON)
+	getAllUsersUsingHateoas()
+		Link link1 = ControllerLinkBuilder
+			.linkTo(UsersController.class)
+			.slash(user1.getName())
+			.withSelfRel();
+		user1.add(link1);
+		
+	adding multiple links: 
+	
+	@GetMapping(value="/getAllUsersUsingHateoas", produces = MediaTypes.HAL_JSON)
+	getAllUsersUsingHateoas()
+		//create user1, user2 objects
+		Link link1 = ControllerLinkBuilder
+			.linkTo(UsersController.class)
+			.slash(user1.getName())
+			.selfSelfRel();
+		Link link2 = ControllerLinkBuilder
+			.linkTo(UsersController.class)
+			.slash(user1.getSalary())
+			.withRel("salary");
+		user1.add(link1, link2);
+		
+		Link link3 = ControllerLinkBuilder
+			.linkTo(UsersController.class)
+			.slash(user2.getSalary())
+			.withRel("salary");
+		user2.add(link3);
+		
+		
+Users extends ResourceSupport
+
+reference: 
+https://howtodoinjava.com/spring-boot/rest-with-spring-hateoas-example/
+
+----------------------------------
+https://www.youtube.com/watch?v=8S8o46avgAw
+
+
+springboot junit test
+
+1st approach (using @Mock, @InjectMocks)
+	@InjectMocks SomeBusinessImpl businessImpl; - Inject the mocks as dependencies into businessImpl
+	@Mock DataService dataServiceMock; - Create a mock for DataService
+	@RunWith(MockitoJUnitRunner.class) - The JUnit Runner which causes all the initialization magic with @Mock and @InjectMocks to happen before the tests are run.
+ 
+
+	@RunWith(MockitoJUnitRunner.class)
+	public class BusinessServicesMockTest {
+
+		@Mock
+		DataService dataServiceMock;
+
+		@InjectMocks
+		BusinessService businessImpl;
+
+		@Test
+		public void testFindTheGreatestFromAllData() {
+			when(dataServiceMock.retrieveAllData()).thenReturn(new int[] { 24, 15, 3 });
+			assertEquals(24, businessImpl.findTheGreatestFromAllData());
+		}
+	}
+
+2nd approach (@MockBean, autowired bean available in spring context) 
+	@RunWith(SpringRunner.class) - Spring Runner is used to launch up a spring context in unit tests.
+	@SpringBootTest - This annotation indicates that the context under test is a @SpringBootApplication. The complete SpringBootTutorialBasicsApplication is launched up during the unit test.
+	@MockBean DataService dataServiceMock - @MockBean annotation creates a mock for DataService. This mock is used in the Spring Context instead of the real DataService.
+	@Autowired BusinessService businessImpl - Pick the Business Service from the Spring Context and autowire it in.
+
+	@RunWith(SpringRunner.class)
+	@SpringBootTest
+	public class BusinessServicesMockSpringContextTest {
+
+		@MockBean
+		DataService dataServiceMock;
+
+		@Autowired
+		BusinessService businessImpl;
+
+		@Test
+		public void testFindTheGreatestFromAllData() {
+			when(dataServiceMock.retrieveAllData()).thenReturn(new int[] { 24, 15, 3 });
+			assertEquals(24, businessImpl.findTheGreatestFromAllData());
+		}
+	}
+
+	which approach should be preferred?
+	Launching the entire spring context makes the unit test slower. Unit tests will also start failing if there are errors in other beans in the contexts. So, the MockitoJUnitRunner approach is preferred.
+
+	Reference: 
+	http://www.springboottutorial.com/spring-boot-unit-testing-and-mocking-with-mockito-and-junit
+
+3rd approach
+To test controller
+
+https://www.youtube.com/watch?v=8S8o46avgAw	
