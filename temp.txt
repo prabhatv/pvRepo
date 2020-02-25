@@ -198,3 +198,151 @@ https://github.com/TechPrimers/test-controller-example/tree/master/src/test/java
 https://www.youtube.com/watch?v=8S8o46avgAw	
 https://www.youtube.com/watch?v=Ijj5RLSAcYw
 ===================
+
+Table of content
+
+- [Fixed locale (locale changed only once ata the time of application startup)](#fixed-locale-locale-changed-only-once-ata-the-time-of-application-startup)
+  - [In main class](#in-main-class)
+  - [In controller class](#in-controller-class)
+  - [property files](#property-files)
+- [Based on Accept-language header](#based-on-accept-language-header)
+  - [Configuration for locale based on Accept-Language header](#configuration-for-locale-based-on-accept-language-header)
+  - [In controller class](#in-controller-class-1)
+  - [property files (with _language or _language_country)](#property-files-with-language-or-languagecountry)
+- [Based on request parameter ( \<url>?language1=fr )](#based-on-request-parameter--urllanguage1fr)
+  - [In controller](#in-controller)
+  - [In message.properties](#in-messageproperties)
+  - [In configuration class](#in-configuration-class)
+
+
+# Fixed locale (locale changed only once ata the time of application startup)
+First, create springboot project
+
+## In main class
+```
+Locale.setDefault(Locale.CHINA);
+```
+## In controller class
+```
+message.getMessage("a.b.c", null, LocaleContextHolder.getLocale())
+```
+## property files
+```
+messages.properties
+    a.b.c= hello world
+messages_en_US.properties
+    a.b.c= us hello world
+messages_zh_cn.properties
+    a.b.c= china hello world
+```
+
+# Based on Accept-language header
+
+## Configuration for locale based on Accept-Language header
+```java
+package com.pv.inter.internalization;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
+
+@Configuration
+public class CustomLocaleResolver extends AcceptHeaderLocaleResolver implements WebMvcConfigurer {
+
+List<Locale> LOCALES = Arrays.asList(
+    new Locale("en"),
+    new Locale("zh"),
+    new Locale("fr"));
+
+    @Override
+    public Locale resolveLocale(HttpServletRequest request) {
+        String headerLang = request.getHeader("Accept-Language");
+        System.out.println(headerLang);
+        return headerLang == null || headerLang.isEmpty()
+        ? Locale.getDefault()
+        : Locale.lookup(Locale.LanguageRange.parse(headerLang), LOCALES);
+    }
+
+    // This bean is not required. Use MessageSource to autowired in class
+    @Bean
+    public ResourceBundleMessageSource messageSource() {
+        ResourceBundleMessageSource rs = new ResourceBundleMessageSource();
+        rs.setBasename("messages");
+        rs.setDefaultEncoding("UTF-8");
+        rs.setUseCodeAsDefaultMessage(true);
+        return rs;
+    }
+}
+```
+
+## In controller class
+```java
+@Autowired
+private MessageSource messageSource;
+//	private ResourceBundleMessageSource  messageSource;
+
+messageSource.getMessage("a.b.c", null, LocaleContextHolder.getLocale());
+```
+
+## property files (with _language or _language_country)
+```
+messages_en.properties
+messages_fr.properties
+messages_zh_HK.properties
+messages_zh_TW.properties
+```
+> **Note**:  
+change properties of file to UTF-8
+
+# Based on request parameter ( \<url>?language1=fr )
+
+## In controller
+```java
+@Autowired
+private MessageSource messageSource;
+
+String message = messageSource.getMessage("hello.world",new Object[] {"one","two"}, LocaleContextHolder.getLocale());
+//hello.world= hello world {0} {1} ca
+
+```
+
+## In message.properties
+in src\main\resources
+```
+messages_en_CA.properties
+hello.world= hello world {0} {1} ca
+messages_fr_FR.properties
+hello.world= hello world {0} {1} fr
+messages.properties
+hello.world= hello world {0} {1} en
+```
+
+## In configuration class
+```java
+@Configuration
+class Config  implements WebMvcConfigurer{
+    @Bean
+    public LocaleResolver localeResolver() {
+        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
+        localeResolver.setDefaultLocale(Locale.CANADA); 
+        //default locale
+        return localeResolver;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        LocaleChangeInterceptor localeChangeInterceptor = new LocaleChangeInterceptor();
+        localeChangeInterceptor.setParamName("language1"); 
+        // passing it as a queryString
+        registry.addInterceptor(localeChangeInterceptor);
+    }
+}
+```
