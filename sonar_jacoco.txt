@@ -1,0 +1,201 @@
+ -Dmaven.test.failure.ignore=false
+
+configure jacoco: 
+ 
+	about jacoco: 
+
+		goals: 
+			prepare-agent 	// 
+			report			// bind with test phase
+			check			// code coverage percentage
+
+	execute using command line: 
+		mvn clean test org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report
+		
+		if you want add configuration then you need add plugin in pom.xml 
+		because we can not pass plugin parameters
+
+	execute using maven plugin: 
+
+		<plugin>
+			<groupId>org.jacoco</groupId>
+			<artifactId>jacoco-maven-plugin</artifactId>
+			<version>${jacoco.version}</version>
+			<executions>
+		
+				<execution>
+					<goals>
+						<goal>prepare-agent</goal>
+					</goals>
+				</execution>
+
+
+
+				<execution>
+					<id>jacoco-report</id>
+					<phase>test</phase>
+					<goals>
+						<goal>report</goal>
+					</goals>
+				</execution>
+
+
+				<!-- Add this checking -->
+				<execution>
+					<id>jacoco-check</id>
+					<goals>
+						<goal>check</goal>
+					</goals>
+					<configuration>
+						<rules>
+							<rule>
+								<element>PACKAGE</element>
+								<limits>
+									<limit>
+										<counter>LINE</counter>
+										<value>COVEREDRATIO</value>
+										<minimum>0.9</minimum>    // 90% 
+									</limit>
+								</limits>
+							</rule>
+						</rules>
+					</configuration>
+				</execution>
+
+			<!-- exclude classes from code coverage -->
+			<configuration>
+				<excludes>
+					<exclude>**/*Config.*</exclude>
+					<exclude>**/*Dev.*</exclude>
+				</excludes>
+			</configuration>
+
+				
+			</executions>
+		</plugin>
+		
+		mvn clean verify
+
+------------------------------------------------------------------------
+
+Sonar configuration: 
+
+	Sonar server (sonarQube)
+	sonar code analyzer (sonar scanner)
+
+	Sonar server (sonarQube)
+		download sonarqube-7.7
+		run sonarQube:
+			startSonar.bat
+		in conf\sonar.properties
+			sonar.web.context= //default is empty
+			sonar.web.port=9000 //default is 9000
+			
+	sonar code analyzer (sonar scanner)
+		Two ways: 
+		1. using sonar scanner maven plugin 
+		2. using sonar scanner 
+
+	using sonar scanner:
+		1. download sonar-scanner-3.3.0.1492-windows
+		2. in project where pom.xml present, create sonar-project.properties
+			in sonar-project.properties
+			sonar.projectKey=my:project // any unique name
+			sonar.projectName=my Project
+			sonar.projectVersion=1.0
+			sonar.sources=.
+		3. run sonar scanner
+			sonar-scanner.bat
+			in conf/sonar-scanner.properties
+				sonar.host.url=http://localhost:9000
+
+	using maven sonar scanner plugin: 
+		mvn clean install sonar:sonar
+			in pom.xml 
+			<properties>
+				<sonar.host.url>http://localhost:9000</sonar.host.url>
+			</properties>
+		or
+		mvn clean install org.sonarsource.scanner.maven:sonar-maven-plugin:3.6.0.1398:sonar
+		or 
+		mvn clean install sonar:sonar -Dsonar.host.url=http://localhost:9000
+		
+		for package exclusion:
+		in pom.xml 
+			<properties>
+				<sonar.exclusions>a/b/c/*</sonar.exclusions>
+			</properties>	
+				
+		
+
+			
+	mvn help
+		//to show help plugin goals
+		mvn help:describe -Dplugin=help
+		
+		//with parameters
+		mvn help:describe -Dplugin=help -Ddetail
+		
+		//for specific goal
+		mvn help:describe -Dplugin=help -Ddetail -Dgoal=system
+		
+		Note: 
+		mvn clean 
+		or
+		mvn clean:clean
+		means 
+		mvn org.apache.maven.plugins:maven-clean-plugin:clean
+		
+		mvn help:describe -Dplugin=org.jacoco:jacoco-maven-plugin
+
+
+	On sonar server side: 
+		1. change port in conf\sonar.properties file
+		2. create sonar user
+		3. create a token for that user
+			this token is used by the project to send report into sonarQube server
+		
+		in project side,
+			mvn sonar:sonar  -Dsonar.host.url=http://localhost:9000  -Dsonar.login=eb3b423446d4fc53b914179a1a159a0b2f17447e
+  
+Integration of jacoco and sonar: 
+
+	while executing mvn sonar:sonar
+	we have to set some maven properties: 
+	
+	in pom.xml <properties> tag 
+		
+		mandatory property to be set: 
+			nothing 
+		
+		optional:
+		<sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.exclusions>com/pv/dto/**/*</sonar.exclusions>
+		<sonar.projectName>wonder2</sonar.projectName>
+		<sonar.projectVersion>1.0.9</sonar.projectVersion>
+		<sonar.projectKey>wonder_full</sonar.projectKey>
+		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.junit.reportPaths>target/surefire-reports</sonar.junit.reportPaths>
+		<sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
+		<sonar.sources>src/main</sonar.sources>
+		<sonar.tests>src/test</sonar.tests>
+		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+		<sonar.language>java</sonar.language>
+		<sonar.java.binaries>target/classes</sonar.java.binaries>
+		
+	mvn clean install sonar:sonar
+		
+sonar default properties value: 
+		sonar.host.url
+		sonar.projectKey 	//default is <groupId>:<artifactId>
+		sonar.projectName	//default is <name>
+		sonar.projectVersion //default is <version> 
+		sonar.login
+		sonar.password
+		sonar.projectDescription	// <description>
+		sonar.links.homepage	// <url> 
+		sonar.projectDate 	// currentDate
+		sonar.sources // default is project base directory 
+		sonar.tests //for source test files, default is project base directory
+		sonar.links.scm 	//<scm><url>
+		
