@@ -1,0 +1,41 @@
+# product-service.yml (in your config-repo repository)
+
+spring:
+  application:
+    name: product-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/productsdb
+    username: product_user
+    password: secret_password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# Eureka client configuration to register with the discovery service
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+# Custom configurations for Product Service
+product-service:
+  api:
+    version: v1
+    max-products: 50
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.example.productservice: DEBUG
+
+# Custom properties for handling external APIs or services
+external:
+  api:
+    base-url: https://api.external.com
+    api-key: abc123456
